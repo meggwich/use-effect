@@ -1,35 +1,62 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
+import List from './components/List';
+import Details from './components/Details';
 import './App.css'
 
+export type infoType = {
+  id: number,
+  name: string,
+  avatar: string,
+  details: {
+      city: string,
+      company: string,
+      position: string
+  }
+};
+
+const listIdLink = 'https://raw.githubusercontent.com/netology-code/ra16-homeworks/master/hooks-context/use-effect/data/users.json';
+
 function App() {
-  const [count, setCount] = useState(0)
+
+  const [list, setList] = useState<{ id: number, name: string }[]>([]);
+
+  const [selected, setSelected] = useState<{ id: number, name: string } | undefined>(undefined);
+
+  const [info, setInfo] = useState<infoType | null>(null)
+
+  useEffect(() => {
+    fetch(listIdLink)
+      .then(data => data.json())
+      .then(json => setList(json)) // Сохраняем данные в состояние
+      .catch(err => console.error('Ошибка загрузки списка с айдишниками', err));
+  }, []);
+
+
+  useEffect(() => {
+    if (selected !== undefined) {
+      fetch(`https://raw.githubusercontent.com/netology-code/ra16-homeworks/master/hooks-context/use-effect/data/${selected.id}.json`)
+      .then(data => data.json())
+      .then(json => setInfo(json))
+      .catch(err => console.error('Ошибка загрузки info', err));
+    }
+
+  }, [selected]);
+
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const target = e.currentTarget as HTMLButtonElement;
+    setSelected({ id: Number(target.id), name: target.name });
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <List list={list} onClick={handleClick} />
+      {info && <Details {...info} />}
     </>
-  )
+  );
+  
 }
 
 export default App
+
+
